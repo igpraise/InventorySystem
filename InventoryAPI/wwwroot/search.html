@@ -1,0 +1,232 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory System - Search</title>
+    <style>
+        /* main page styling */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* top navigation bar */
+        .navbar {
+            background-color: #333;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        /* search box styling */
+        .search-box {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        /* input field styling */
+        input, select {
+            padding: 10px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            width: 200px;
+        }
+
+        /* button styling */
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+        }
+
+            /* button hover effect */
+            button:hover {
+                background-color: #45a049;
+            }
+
+        /* logout button styling */
+        .logout {
+            background-color: #f44336;
+        }
+
+        /* table styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        /* table header styling */
+        th {
+            background-color: #333;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+
+        /* table row styling */
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        /* table row hover effect */
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        /* upload button styling */
+        .upload-btn {
+            background-color: #2196F3;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- navigation bar -->
+    <div class="navbar">
+        <span>📦 Inventory System</span>
+        <span id="welcomeMsg"></span>
+        <div>
+            <button class="upload-btn" onclick="window.location.href='upload.html'">Upload Receipt</button>
+            <button class="logout" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <!-- search form box -->
+    <div class="search-box">
+        <h3>Search Inventory Items</h3>
+
+        <!-- search by name input -->
+        <input type="text" id="searchName" placeholder="Search by name" />
+
+        <!-- search by category input -->
+        <input type="text" id="searchCategory" placeholder="Search by category" />
+
+        <!-- search button -->
+        <button onclick="searchItems()">Search</button>
+
+        <!-- show all button -->
+        <button onclick="loadAllItems()">Show All</button>
+    </div>
+
+    <!-- results table -->
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Item Name</th>
+                <th>Category</th>
+                <th>Quantity</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody id="itemsTable">
+            <!-- items will be loaded here -->
+        </tbody>
+    </table>
+
+    <script>
+        // check if user is logged in when page loads
+        window.onload = function () {
+            // get user info from session storage
+            const userId = sessionStorage.getItem("userId");
+            const fullName = sessionStorage.getItem("fullName");
+
+            // redirect to login if not logged in
+            if (!userId) {
+                window.location.href = "login.html";
+                return;
+            }
+
+            // show welcome message
+            document.getElementById("welcomeMsg").textContent = "Welcome, " + fullName;
+
+            // load all items when page opens
+            loadAllItems();
+        };
+
+        // loads all items from the backend
+        async function loadAllItems() {
+            // send request to get all items
+            const response = await fetch("https://localhost:44382/api/Items/search");
+            const items = await response.json();
+
+            // show the items in the table
+            displayItems(items);
+        }
+
+        // searches items by name or category
+        async function searchItems() {
+            // get search values from input fields
+            const name = document.getElementById("searchName").value.trim();
+            const category = document.getElementById("searchCategory").value.trim();
+
+            // build the search url with parameters
+            let url = "https://localhost:44382/api/Items/search?";
+            if (name) url += "name=" + name + "&";
+            if (category) url += "category=" + category;
+
+            // send the search request to the backend
+            const response = await fetch(url);
+            const items = await response.json();
+
+            // show the items in the table
+            displayItems(items);
+        }
+
+        // displays items in the table
+        function displayItems(items) {
+            // get the table body element
+            const table = document.getElementById("itemsTable");
+
+            // check if no items were found
+            if (items.length === 0) {
+                table.innerHTML = "<tr><td colspan='5' style='text-align:center'>No items found</td></tr>";
+                return;
+            }
+
+            // build the table rows from the items
+            table.innerHTML = items.map(item => `
+                <tr>
+                    <td>${item.itemId}</td>
+                    <td>${item.itemName}</td>
+                    <td>${item.category}</td>
+                    <td>${item.quantity}</td>
+                    <td>${item.description}</td>
+                </tr>
+            `).join("");
+        }
+
+        // logs the user out and redirects to login page
+        function logout() {
+            // clear session storage
+            sessionStorage.clear();
+
+            // redirect to login page
+            window.location.href = "login.html";
+        }
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,383 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory System - Admin Panel</title>
+    <style>
+        /* main page styling */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* top navigation bar */
+        .navbar {
+            background-color: #333;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        /* tab buttons styling */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        /* tab button styling */
+        .tab-btn {
+            padding: 10px 20px;
+            background-color: #ddd;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+            /* active tab styling */
+            .tab-btn.active {
+                background-color: #333;
+                color: white;
+            }
+
+        /* content box styling */
+        .content-box {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        /* table styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        /* table header styling */
+        th {
+            background-color: #333;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+
+        /* table row styling */
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+            font-size: 14px;
+        }
+
+        /* table row hover effect */
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        /* button styling */
+        button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+            /* button hover effect */
+            button:hover {
+                background-color: #45a049;
+            }
+
+        /* logout button styling */
+        .logout {
+            background-color: #f44336;
+        }
+
+        /* disable button styling */
+        .disable-btn {
+            background-color: #f44336;
+        }
+
+        /* approve button styling */
+        .approve-btn {
+            background-color: #2196F3;
+        }
+
+        /* success log row styling */
+        .success-row {
+            color: green;
+        }
+
+        /* failure log row styling */
+        .failure-row {
+            color: red;
+        }
+
+        /* hidden class */
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- navigation bar -->
+    <div class="navbar">
+        <span>📦 Inventory System - Admin Panel</span>
+        <span id="welcomeMsg"></span>
+        <button class="logout" onclick="logout()">Logout</button>
+    </div>
+
+    <!-- tab buttons -->
+    <div class="tabs">
+        <button class="tab-btn active" onclick="showTab('users')">All Users</button>
+        <button class="tab-btn" onclick="showTab('receipts')">Pending Receipts</button>
+        <button class="tab-btn" onclick="showTab('logs')">System Logs</button>
+    </div>
+
+    <!-- users tab -->
+    <div id="users-tab" class="content-box">
+        <h3>All Users</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Full Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Active</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="usersTable">
+                <!-- users will be loaded here -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- receipts tab -->
+    <div id="receipts-tab" class="content-box hidden">
+        <h3>Pending Receipts</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>File Name</th>
+                    <th>File Type</th>
+                    <th>Size (KB)</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="receiptsTable">
+                <!-- receipts will be loaded here -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- logs tab -->
+    <div id="logs-tab" class="content-box hidden">
+        <h3>System Logs</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>User ID</th>
+                    <th>Action</th>
+                    <th>IP Address</th>
+                    <th>Status</th>
+                    <th>Time</th>
+                </tr>
+            </thead>
+            <tbody id="logsTable">
+                <!-- logs will be loaded here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // check if user is logged in and is admin when page loads
+        window.onload = function () {
+            // get user info from session storage
+            const userId = sessionStorage.getItem("userId");
+            const role = sessionStorage.getItem("role");
+            const fullName = sessionStorage.getItem("fullName");
+
+            // redirect to login if not logged in
+            if (!userId) {
+                window.location.href = "login.html";
+                return;
+            }
+
+            // redirect to search if not admin (Week 4 - authorization)
+            if (role !== "admin") {
+                window.location.href = "search.html";
+                return;
+            }
+
+            // show welcome message
+            document.getElementById("welcomeMsg").textContent = "Admin: " + fullName;
+
+            // load users when page opens
+            loadUsers();
+        };
+
+        // shows the selected tab and hides the others
+        function showTab(tabName) {
+            // hide all tabs
+            document.getElementById("users-tab").classList.add("hidden");
+            document.getElementById("receipts-tab").classList.add("hidden");
+            document.getElementById("logs-tab").classList.add("hidden");
+
+            // remove active class from all tab buttons
+            document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
+
+            // show the selected tab
+            document.getElementById(tabName + "-tab").classList.remove("hidden");
+
+            // load the right data for the tab
+            if (tabName === "users") loadUsers();
+            if (tabName === "receipts") loadReceipts();
+            if (tabName === "logs") loadLogs();
+        }
+
+        // loads all users from the backend
+        async function loadUsers() {
+            // get the admin role from session storage
+            const role = sessionStorage.getItem("role");
+
+            // send request to get all users
+            const response = await fetch("https://localhost:44382/api/Admin/users?role=" + role);
+            const users = await response.json();
+
+            // get the table body element
+            const table = document.getElementById("usersTable");
+
+            // build the table rows from the users
+            table.innerHTML = users.map(user => `
+                <tr>
+                    <td>${user.userId}</td>
+                    <td>${user.fullName}</td>
+                    <td>${user.email}</td>
+                    <td>${user.role}</td>
+                    <td>${user.isActive ? "Yes" : "No"}</td>
+                    <td>
+                        ${user.isActive ?
+                            `<button class="disable-btn" onclick="disableUser(${user.userId})">Disable</button>` :
+                            "Disabled"}
+                    </td>
+                </tr>
+            `).join("");
+        }
+
+        // loads all pending receipts from the backend
+        async function loadReceipts() {
+            // get the admin role from session storage
+            const role = sessionStorage.getItem("role");
+            const adminId = sessionStorage.getItem("userId");
+
+            // send request to get all receipts
+            const response = await fetch("https://localhost:44382/api/Admin/users?role=" + role);
+            const data = await response.json();
+
+            // show no receipts message for now
+            document.getElementById("receiptsTable").innerHTML =
+                "<tr><td colspan='6' style='text-align:center'>No pending receipts</td></tr>";
+        }
+
+        // loads all system logs from the backend
+        async function loadLogs() {
+            // get the admin role from session storage
+            const role = sessionStorage.getItem("role");
+
+            // send request to get all logs
+            const response = await fetch("https://localhost:44382/api/Admin/logs?role=" + role);
+            const logs = await response.json();
+
+            // get the table body element
+            const table = document.getElementById("logsTable");
+
+            // check if no logs were found
+            if (logs.length === 0) {
+                table.innerHTML = "<tr><td colspan='6' style='text-align:center'>No logs found</td></tr>";
+                return;
+            }
+
+            // build the table rows from the logs
+            table.innerHTML = logs.map(log => `
+                <tr class="${log.status === 'success' ? 'success-row' : 'failure-row'}">
+                    <td>${log.logId}</td>
+                    <td>${log.userId ?? 'N/A'}</td>
+                    <td>${log.action}</td>
+                    <td>${log.ipAddress}</td>
+                    <td>${log.status}</td>
+                    <td>${new Date(log.loggedAt).toLocaleString()}</td>
+                </tr>
+            `).join("");
+        }
+
+        // disables a user account
+        async function disableUser(userId) {
+            // get the admin role and id from session storage
+            const role = sessionStorage.getItem("role");
+            const adminId = sessionStorage.getItem("userId");
+
+            // send request to disable the user
+            const response = await fetch(
+                "https://localhost:44382/api/Admin/disable/" + userId + "?role=" + role + "&adminId=" + adminId,
+                { method: "PUT" }
+            );
+
+            // check if it worked
+            if (response.ok) {
+                alert("User disabled successfully");
+                loadUsers();
+            } else {
+                alert("Failed to disable user");
+            }
+        }
+
+        // approves a receipt
+        async function approveReceipt(receiptId) {
+            // get the admin role and id from session storage
+            const role = sessionStorage.getItem("role");
+            const adminId = sessionStorage.getItem("userId");
+
+            // send request to approve the receipt
+            const response = await fetch(
+                "https://localhost:44382/api/Admin/approve/" + receiptId + "?role=" + role + "&adminId=" + adminId,
+                { method: "PUT" }
+            );
+
+            // check if it worked
+            if (response.ok) {
+                alert("Receipt approved successfully");
+                loadReceipts();
+            } else {
+                alert("Failed to approve receipt");
+            }
+        }
+
+        // logs the user out and redirects to login page
+        function logout() {
+            // clear session storage
+            sessionStorage.clear();
+
+            // redirect to login page
+            window.location.href = "login.html";
+        }
+    </script>
+
+</body>
+</html>
